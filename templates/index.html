@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analytics Dashboard | ADmyBRAND</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    
+    <!-- Animation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-card: rgba(26, 26, 26, 0.9);
+            --bg-glass: rgba(255, 255, 255, 0.05);
+            
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #666666;
+            
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 40px rgba(102, 126, 234, 0.3);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            
+            --radius: 16px;
+            --spacing: 24px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 25% 25%, #667eea 0%, transparent 50%),
+                        radial-gradient(circle at 75% 75%, #764ba2 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, #f093fb 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(20px) rotate(240deg); }
+        }
+
+        /* Glassmorphism Styles */
+        .glass {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--success-gradient);
+            border-radius: 50px;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Main Layout */
+        .main-container {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .ai-chat-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .ai-chat-trigger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow), 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-card);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-change {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .change-positive { color: #4ade80; }
+        .change-negative { color: #f87171; }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-btn.active,
+        .chart-btn:hover {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* AI Chat Panel */
+        .ai-chat-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-chat-panel.open {
+            right: 0;
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+        }
+
+        .chat-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .chat-close:hover {
+            background: var(--bg-glass);
+            color: var(--text-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 12px;
+            max-width: 85%;
+            animation: messageSlide 0.3s ease;
+        }
+
+        .message.user {
+            background: var(--primary-gradient);
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-input-area {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .chat-send {
+            padding: 1rem;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-send:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Campaigns Table */
+        .campaigns-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .campaigns-table {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-header {
+            background: var(--bg-glass);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .table-row:hover {
+            background: var(--bg-glass);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .campaign-name {
+            font-weight: 600;
+        }
+
+        .campaign-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .status-paused {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-completed {
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+        }
+
+        /* Predictions Panel */
+        .predictions-panel {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+
+        .predictions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .prediction-card {
+            background: var(--bg-glass);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .prediction-metric {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-confidence {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ai-chat-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .table-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .nav-content {
+                padding: 0 1rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--success-gradient);
+            color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-card);
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1002;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-glow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-glow), 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease forwards;
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.6s ease forwards;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                AI Analytics Pro
+            </div>
+            <div class="nav-actions">
+                <div class="ai-status">
+                    <div class="pulse"></div>
+                    <span>AI Assistant Active</span>
+                </div>
+                <button class="fab" onclick="toggleAIChat()" style="position: relative; bottom: 0; right: 0; width: 45px; height: 45px; font-size: 1.2rem;">
+                    <i class="fas fa-robot"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Hero Section -->
+        <section class="hero-section fade-in">
+            <h1 class="hero-title">AI-Powered Analytics Dashboard</h1>
+            <p class="hero-subtitle">
+                Harness the power of LLaMA 3 AI to transform your data into actionable insights
+            </p>
+            <button class="ai-chat-trigger" onclick="toggleAIChat()">
+                <i class="fas fa-magic"></i>
+                Ask AI Anything
+            </button>
+        </section>
+
+        <!-- Key Metrics -->
+        <section class="metrics-grid fade-in">
+            <div class="metric-card slide-in-left" style="animation-delay: 0.1s">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background: var(--success-gradient);">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="total-revenue">$1,250,000</div>
+                <div class="metric-label">Total Revenue</div>
+                <div class="metric-change change-positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+12.5% vs last month</span>
+                </div>
+            </div>
+
+            <div class="metric-card slide-in-left" style="animation-delay: 0.2s">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background: var(--primary-gradient);">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="active-campaigns">45</div>
+                <div class="metric-label">Active Campaigns</div>
+                <div class="metric-change change-positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+8 new this week</span>
+                </div>
+            </div>
+
+            <div class="metric-card slide-in-left" style="animation-delay: 0.3s">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background: var(--warning-gradient);">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="conversion-rate">3.4%</div>
+                <div class="metric-label">Conversion Rate</div>
+                <div class="metric-change change-positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+0.8% improvement</span>
+                </div>
+            </div>
+
+            <div class="metric-card slide-in-left" style="animation-delay: 0.4s">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background: var(--danger-gradient);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="traffic">125,000</div>
+                <div class="metric-label">Monthly Traffic</div>
+                <div class="metric-change change-positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+15.2% growth</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section fade-in">
+            <div class="chart-card slide-in-right">
+                <div class="chart-header">
+                    <h3 class="chart-title">Revenue Trend Analysis</h3>
+                    <div class="chart-actions">
+                        <button class="chart-btn active">7D</button>
+                        <button class="chart-btn">30D</button>
+                        <button class="chart-btn">90D</button>
+                    </div>
+                </div>
+                <div id="revenue-chart" style="height: 350px;"></div>
+            </div>
+
+            <div class="chart-card slide-in-right" style="animation-delay: 0.2s">
+                <div class="chart-header">
+                    <h3 class="chart-title">User Segments</h3>
+                </div>
+                <div id="segments-chart" style="height: 350px;"></div>
+            </div>
+        </section>
+
+        <!-- AI Predictions Panel -->
+        <section class="predictions-panel fade-in">
+            <div class="predictions-header">
+                <h2 class="section-title">AI Predictions (Next 7 Days)</h2>
+                <button class="chart-btn" onclick="generatePredictions()">
+                    <i class="fas fa-magic"></i>
+                    Generate New Predictions
+                </button>
+            </div>
+            <div class="predictions-grid" id="predictions-container">
+                <div class="prediction-card">
+                    <div class="prediction-metric">Revenue Forecast</div>
+                    <div class="prediction-value">$285,000</div>
+                    <div class="prediction-confidence">Confidence: 89%</div>
+                </div>
+                <div class="prediction-card">
+                    <div class="prediction-metric">Traffic Prediction</div>
+                    <div class="prediction-value">32,500</div>
+                    <div class="prediction-confidence">Confidence: 92%</div>
+                </div>
+                <div class="prediction-card">
+                    <div class="prediction-metric">Conversion Rate</div>
+                    <div class="prediction-value">3.7%</div>
+                    <div class="prediction-confidence">Confidence: 85%</div>
+                </div>
+                <div class="prediction-card">
+                    <div class="prediction-metric">Campaign Performance</div>
+                    <div class="prediction-value">+18%</div>
+                    <div class="prediction-confidence">Confidence: 91%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Campaigns Section -->
+        <section class="campaigns-section fade-in">
+            <div class="section-header">
+                <h2 class="section-title">Active Campaigns</h2>
+                <button class="chart-btn">
+                    <i class="fas fa-plus"></i>
+                    New Campaign
+                </button>
+            </div>
+            <div class="campaigns-table">
+                <div class="table-header">
+                    <div class="table-row" style="font-weight: 600; color: var(--text-secondary);">
+                        <div>Campaign Name</div>
+                        <div>Status</div>
+                        <div>Budget</div>
+                        <div>Spent</div>
+                        <div>ROI</div>
+                        <div>Actions</div>
+                    </div>
+                </div>
+                <div id="campaigns-container">
+                    <!-- Campaigns will be loaded here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- AI Chat Panel -->
+    <div class="ai-chat-panel" id="ai-chat-panel">
+        <div class="chat-header">
+            <div class="chat-title">
+                <i class="fas fa-robot"></i>
+                AI Analytics Assistant
+            </div>
+            <button class="chat-close" onclick="toggleAIChat()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message ai">
+                <strong>AI Assistant:</strong><br>
+                Hello! I'm your AI analytics assistant powered by LLaMA 3. I can help you analyze your data, generate insights, create predictions, and answer any questions about your campaigns and performance metrics. What would you like to know?
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <div class="chat-input-container">
+                <textarea 
+                    class="chat-input" 
+                    id="chat-input" 
+                    placeholder="Ask me anything about your analytics..."
+                    rows="1"
+                ></textarea>
+                <button class="chat-send" id="chat-send" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="toggleAIChat()" style="bottom: 6rem;">
+        <i class="fas fa-chart-bar"></i>
+    </button>
+
+    <script>
+        // Global variables
+        let dashboardData = {};
+        let isAIChatOpen = false;
+        let isLoading = false;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initDashboard();
+            setupEventListeners();
+            loadDashboardData();
+        });
+
+        function initDashboard() {
+            // Add smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Initialize animations
+            if (typeof gsap !== 'undefined') {
+                gsap.from('.metric-card', {
+                    duration: 0.8,
+                    y: 50,
+                    opacity: 0,
+                    stagger: 0.1,
+                    ease: 'power2.out'
+                });
+            }
+        }
+
+        function setupEventListeners() {
+            // Chat input auto-resize
+            const chatInput = document.getElementById('chat-input');
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+
+            // Send message on Enter (but not Shift+Enter)
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Real-time metrics updates
+            setInterval(updateMetrics, 30000); // Update every 30 seconds
+            
+            // Chart period buttons
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.textContent.includes('D')) {
+                        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        loadRevenueChart(this.textContent);
+                    }
+                });
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                showLoading('Loading dashboard data...');
+                
+                // Simulate API call for demo
+                const mockData = {
+                    status: 'success',
+                    data: {
+                        metrics: {
+                            total_revenue: 1250000,
+                            active_campaigns: 45,
+                            conversion_rate: 3.4,
+                            traffic: 125000
+                        },
+                        campaigns: [
+                            {
+                                id: 1,
+                                name: "Summer Sale 2024",
+                                status: "active",
+                                budget: 50000,
+                                spent: 32000,
+                                roi: 250
+                            },
+                            {
+                                id: 2,
+                                name: "Brand Awareness Q3",
+                                status: "active",
+                                budget: 75000,
+                                spent: 68000,
+                                roi: 180
+                            },
+                            {
+                                id: 3,
+                                name: "Holiday Special",
+                                status: "paused",
+                                budget: 30000,
+                                spent: 25000,
+                                roi: 160
+                            }
+                        ],
+                        user_segments: [
+                            {segment: "Premium Users", count: 15000},
+                            {segment: "Regular Users", count: 35000},
+                            {segment: "New Users", count: 8000},
+                            {segment: "Churned Users", count: 2000}
+                        ]
+                    }
+                };
+                
+                dashboardData = mockData.data;
+                updateDashboard();
+                loadCharts();
+                loadCampaigns();
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                showToast('Failed to load dashboard data', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateDashboard() {
+            const metrics = dashboardData.metrics;
+            
+            // Update metric values with animations
+            animateValue('total-revenue', 0, metrics.total_revenue, 2000);
+            animateValue('active-campaigns', 0, metrics.active_campaigns, 1500);
+            animateValue('conversion-rate', 0, metrics.conversion_rate, 1800, '', '%');
+            animateValue('traffic', 0, metrics.traffic, 2200);
+        }
+
+        function animateValue(elementId, start, end, duration, prefix = '', suffix = '') {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            const range = end - start;
+            const startTime = performance.now();
+            
+            function updateValue(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = start + (range * easeOut);
+                
+                let displayValue;
+                if (elementId === 'total-revenue' || elementId === 'traffic') {
+                    displayValue = Math.floor(current).toLocaleString();
+                } else {
+                    displayValue = current.toFixed(1);
+                }
+                
+                element.textContent = prefix + displayValue + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateValue);
+                }
+            }
+            
+            requestAnimationFrame(updateValue);
+        }
+
+        async function loadCharts() {
+            await Promise.all([
+                loadRevenueChart(),
+                loadSegmentsChart()
+            ]);
+        }
+
+        async function loadRevenueChart(period = '7D') {
+            try {
+                // Generate mock data for revenue chart
+                const days = period === '7D' ? 7 : period === '30D' ? 30 : 90;
+                const dates = [];
+                const revenues = [];
+                
+                for (let i = days - 1; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    dates.push(date.toLocaleDateString());
+                    revenues.push(Math.floor(Math.random() * 50000 + 30000));
+                }
+                
+                const trace = {
+                    x: dates,
+                    y: revenues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {
+                        color: '#667eea',
+                        width: 3
+                    },
+                    marker: {
+                        color: '#667eea',
+                        size: 6
+                    },
+                    fill: 'tonexty',
+                    fillcolor: 'rgba(102, 126, 234, 0.1)'
+                };
+
+                const layout = {
+                    showlegend: false,
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#ffffff', family: 'Inter' },
+                    margin: { t: 20, r: 20, b: 40, l: 60 },
+                    xaxis: {
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        color: '#b0b0b0'
+                    },
+                    yaxis: {
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        color: '#b0b0b0'
+                    }
+                };
+
+                Plotly.newPlot('revenue-chart', [trace], layout, {
+                    responsive: true,
+                    displayModeBar: false
+                });
+            } catch (error) {
+                console.error('Failed to load revenue chart:', error);
+            }
+        }
+
+        async function loadSegmentsChart() {
+            const segments = dashboardData.user_segments;
+            if (!segments) return;
+
+            const data = [{
+                values: segments.map(s => s.count),
+                labels: segments.map(s => s.segment),
+                type: 'pie',
+                hole: 0.4,
+                marker: {
+                    colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c']
+                },
+                textinfo: 'label+percent',
+                textfont: {
+                    color: '#ffffff',
+                    family: 'Inter'
+                }
+            }];
+
+            const layout = {
+                showlegend: false,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#ffffff', family: 'Inter' },
+                margin: { t: 20, r: 20, b: 20, l: 20 }
+            };
+
+            Plotly.newPlot('segments-chart', data, layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        function loadCampaigns() {
+            const container = document.getElementById('campaigns-container');
+            const campaigns = dashboardData.campaigns;
+            
+            if (!campaigns || campaigns.length === 0) return;
+
+            container.innerHTML = campaigns.map(campaign => `
+                <div class="table-row">
+                    <div class="campaign-name">${campaign.name}</div>
+                    <div>
+                        <span class="campaign-status status-${campaign.status}">
+                            ${campaign.status}
+                        </span>
+                    </div>
+                    <div>${campaign.budget.toLocaleString()}</div>
+                    <div>${campaign.spent.toLocaleString()}</div>
+                    <div class="change-positive">${campaign.roi}%</div>
+                    <div>
+                        <button class="chart-btn" onclick="analyzeCampaign(${campaign.id})">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // AI Chat Functions
+        function toggleAIChat() {
+            const panel = document.getElementById('ai-chat-panel');
+            isAIChatOpen = !isAIChatOpen;
+            
+            if (isAIChatOpen) {
+                panel.classList.add('open');
+                document.getElementById('chat-input').focus();
+            } else {
+                panel.classList.remove('open');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message || isLoading) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Show AI typing indicator
+            const typingId = addMessage('AI is analyzing your query...', 'ai', true);
+            
+            try {
+                // Simulate AI response for demo
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Remove typing indicator
+                document.getElementById(typingId).remove();
+                
+                // Generate mock AI response
+                const responses = [
+                    "Based on your current data, I can see that your revenue has grown by 12.5% compared to last month. Your conversion rate of 3.4% is above industry average, and your active campaigns are performing well with an average ROI of 196%.",
+                    "Looking at your traffic patterns, you're seeing consistent growth with 125,000 monthly visitors. I recommend focusing on your premium user segment as they generate the highest revenue per user at $250 average order value.",
+                    "Your campaigns show strong performance metrics. The Summer Sale 2024 campaign has the best ROI at 250%. Consider reallocating budget from lower-performing campaigns to maximize returns.",
+                    "I notice seasonal trends in your data. Revenue typically peaks during promotional periods. I suggest implementing predictive inventory management to capitalize on these trends."
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'ai');
+            } catch (error) {
+                // Remove typing indicator
+                if (document.getElementById(typingId)) {
+                    document.getElementById(typingId).remove();
+                }
+                addMessage('Sorry, I\'m having trouble connecting right now. Please try again later.', 'ai');
+                console.error('AI chat error:', error);
+            }
+        }
+
+        function addMessage(content, sender, isTemporary = false) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            const messageId = 'msg-' + Date.now() + Math.random();
+            
+            messageDiv.id = messageId;
+            messageDiv.className = `message ${sender}`;
+            
+            if (sender === 'ai') {
+                messageDiv.innerHTML = `<strong>AI Assistant:</strong><br>${content}`;
+            } else {
+                messageDiv.innerHTML = `<strong>You:</strong><br>${content}`;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return isTemporary ? messageId : null;
+        }
+
+        // Utility Functions
+        async function generatePredictions() {
+            try {
+                showLoading('Generating AI predictions...');
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                updatePredictionsDisplay();
+                showToast('AI predictions generated successfully!');
+            } catch (error) {
+                console.error('Failed to generate predictions:', error);
+                showToast('Failed to generate predictions', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updatePredictionsDisplay() {
+            // Simulate updated predictions with AI analysis
+            const container = document.getElementById('predictions-container');
+            const cards = container.querySelectorAll('.prediction-card');
+            
+            cards.forEach((card, index) => {
+                const valueElement = card.querySelector('.prediction-value');
+                const confidenceElement = card.querySelector('.prediction-confidence');
+                
+                // Animate the update
+                if (typeof gsap !== 'undefined') {
+                    gsap.to(valueElement, {
+                        duration: 0.5,
+                        scale: 1.1,
+                        ease: 'power2.out',
+                        onComplete: () => {
+                            // Update with new predicted values
+                            const metrics = ['$298,500', '34,200', '3.9%', '+22%'];
+                            const confidences = ['91%', '94%', '87%', '93%'];
+                            
+                            valueElement.textContent = metrics[index];
+                            confidenceElement.textContent = `Confidence: ${confidences[index]}`;
+                            
+                            gsap.to(valueElement, {
+                                duration: 0.3,
+                                scale: 1,
+                                ease: 'power2.out'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function analyzeCampaign(campaignId) {
+            const campaign = dashboardData.campaigns.find(c => c.id === campaignId);
+            if (!campaign) return;
+
+            const analysisQuery = `Analyze the performance of campaign "${campaign.name}" with budget ${campaign.budget.toLocaleString()}, spent ${campaign.spent.toLocaleString()}, ROI ${campaign.roi}%, and provide optimization recommendations.`;
+            
+            if (!isAIChatOpen) {
+                toggleAIChat();
+            }
+            
+            setTimeout(() => {
+                document.getElementById('chat-input').value = analysisQuery;
+                sendMessage();
+            }, 300);
+        }
+
+        async function updateMetrics() {
+            try {
+                // Simulate real-time updates
+                const variations = {
+                    total_revenue: Math.floor(Math.random() * 10000 - 5000),
+                    active_campaigns: Math.floor(Math.random() * 3 - 1),
+                    conversion_rate: (Math.random() * 0.2 - 0.1).toFixed(1),
+                    traffic: Math.floor(Math.random() * 1000 - 500)
+                };
+
+                Object.keys(variations).forEach(key => {
+                    if (dashboardData.metrics[key]) {
+                        const element = document.getElementById(key.replace('_', '-'));
+                        const newValue = dashboardData.metrics[key] + variations[key];
+                        
+                        if (element && newValue > 0) {
+                            dashboardData.metrics[key] = newValue;
+                            
+                            // Animate the change
+                            if (typeof gsap !== 'undefined') {
+                                gsap.to(element, {
+                                    duration: 0.5,
+                                    scale: 1.1,
+                                    ease: 'power2.out',
+                                    onComplete: () => {
+                                        element.textContent = formatMetricValue(key, newValue);
+                                        gsap.to(element, {
+                                            duration: 0.3,
+                                            scale: 1,
+                                            ease: 'power2.out'
+                                        });
+                                    }
+                                });
+                            } else {
+                                element.textContent = formatMetricValue(key, newValue);
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to update metrics:', error);
+            }
+        }
+
+        function formatMetricValue(key, value) {
+            switch (key) {
+                case 'total_revenue':
+                    return Math.floor(value).toLocaleString();
+                case 'traffic':
+                    return Math.floor(value).toLocaleString();
+                case 'conversion_rate':
+                    return value.toFixed(1) + '%';
+                default:
+                    return Math.floor(value).toString();
+            }
+        }
+
+        function showLoading(message) {
+            isLoading = true;
+            const loadingElement = document.createElement('div');
+            loadingElement.id = 'loading-indicator';
+            loadingElement.className = 'loading';
+            loadingElement.innerHTML = `
+                <div class="spinner"></div>
+                <span>${message}</span>
+            `;
+            loadingElement.style.position = 'fixed';
+            loadingElement.style.top = '50%';
+            loadingElement.style.left = '50%';
+            loadingElement.style.transform = 'translate(-50%, -50%)';
+            loadingElement.style.zIndex = '1003';
+            loadingElement.style.background = 'var(--bg-card)';
+            loadingElement.style.padding = '1rem 2rem';
+            loadingElement.style.borderRadius = '12px';
+            loadingElement.style.border = '1px solid var(--border-color)';
+            
+            document.body.appendChild(loadingElement);
+        }
+
+        function hideLoading() {
+            isLoading = false;
+            const loadingElement = document.getElementById('loading-indicator');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            
+            if (type === 'error') {
+                toast.style.background = 'var(--danger-gradient)';
+            } else {
+                toast.style.background = 'var(--success-gradient)';
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Error handling
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            showToast('An error occurred. Please refresh the page.', 'error');
+        });
+
+        // Responsive handling
+        window.addEventListener('resize', function() {
+            if (typeof Plotly !== 'undefined') {
+                Plotly.Plots.resize('revenue-chart');
+                Plotly.Plots.resize('segments-chart');
+            }
+        });
+    </script>
+</body>
+</html>
