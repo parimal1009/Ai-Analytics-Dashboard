@@ -1,8 +1,6 @@
-# AI Analytics Dashboard
-
 ![Dashboard Screenshot](https://github.com/parimal1009/Ai-Analytics-Dashboard/blob/main/images/Screenshot%202025-07-28%20163110.png?raw=true)
 
-
+# AI Analytics Dashboard
 
 ![AI Chat Screenshot](https://github.com/parimal1009/Ai-Analytics-Dashboard/blob/main/images/Screenshot%202025-07-28%20163119.png?raw=true)
 
@@ -50,6 +48,46 @@ python main.py
 ```
 - The dashboard will be available at [http://localhost:8000](http://localhost:8000)
 
+## Deployment on Render.com
+
+You can easily deploy this project as a web service on [Render](https://render.com/):
+
+### 1. Create a New Web Service
+- Go to [Render Dashboard](https://dashboard.render.com/) and click **New + > Web Service**.
+- Connect your GitHub repository.
+
+### 2. Configure the Service
+- **Environment:** Python 3.10 or higher
+- **Build Command:**
+  ```sh
+  pip install --no-cache-dir -r requirements.txt
+  ```
+- **Start Command:**
+  ```sh
+  uvicorn main:app --host 0.0.0.0 --port 10000
+  ```
+  (Or use `python main.py` if you want auto-reload, but `uvicorn` is recommended for production.)
+- **Instance Type:** Starter or higher
+
+### 3. Environment Variables
+- Add your Groq API key as an environment variable:
+  - Key: `GROQ_API_KEY`
+  - Value: `your_actual_groq_api_key`
+- (Optional) Add any other secrets or config as needed.
+
+### 4. Expose the Web Service
+- Set the port to **10000** (or change the `uvicorn` command to use Render's default port `$PORT`):
+  ```sh
+  uvicorn main:app --host 0.0.0.0 --port $PORT
+  ```
+- Render will automatically assign a public URL to your app.
+
+### 5. Deploy
+- Click **Create Web Service** and wait for the build and deploy to finish.
+- Visit your Render URL to access the dashboard.
+
+---
+
 ## Usage
 - View real-time business metrics and trends.
 - Use the AI chat assistant to ask questions about your data, get insights, and generate predictions.
@@ -62,5 +100,3 @@ python main.py
 
 ## License
 This project is licensed under the MIT License.
-
----

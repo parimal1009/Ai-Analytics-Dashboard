@@ -29,7 +29,7 @@ app = FastAPI(title="AI Analytics Dashboard", description="Advanced AI-Powered A
 templates = Jinja2Templates(directory="templates")
 
 # Initialize Groq client and LangChain
-GROQ_API_KEY = "your_groq_api_key_here"  # Replace with your actual API key
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "your_groq_api_key_here")
 # groq_client = Groq(api_key=GROQ_API_KEY)  # Disabled due to proxies argument error
 llm = ChatGroq(
     groq_api_key=GROQ_API_KEY,
@@ -398,11 +398,12 @@ async def startup_event():
     asyncio.create_task(update_metrics())
 
 if __name__ == "__main__":
-    # Run the application
+    import os
+    port = int(os.getenv("PORT", 10000))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=True,
         log_level="info"
     )
