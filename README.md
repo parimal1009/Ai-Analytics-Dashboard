@@ -1,6 +1,8 @@
+# AI Analytics Dashboard
+
 ![Dashboard Screenshot](https://github.com/parimal1009/Ai-Analytics-Dashboard/blob/main/images/Screenshot%202025-07-28%20163110.png?raw=true)
 
-# AI Analytics Dashboard
+
 
 ![AI Chat Screenshot](https://github.com/parimal1009/Ai-Analytics-Dashboard/blob/main/images/Screenshot%202025-07-28%20163119.png?raw=true)
 
