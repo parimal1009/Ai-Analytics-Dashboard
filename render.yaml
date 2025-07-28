@@ -2,10 +2,19 @@ services:
   - type: web
     name: ai-analytics-dashboard
     env: python
-    buildCommand: "pip install --no-cache-dir -r requirements.txt"
-    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: starter  # Change to 'free' for free tier
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
       - key: GROQ_API_KEY
+        sync: false  # Will be set manually in Render dashboard
+      - key: LANGSMITH_API_KEY
         sync: false
-      - key: PORT
-        value: 10000 
+      - key: LANGSMITH_PROJECT
+        value: Ad_my_brand_project
+      - key: HF_TOKEN
+        sync: false
