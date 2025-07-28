@@ -10,19 +10,15 @@ langchain==0.2.16
 langchain-groq==0.1.9
 langchain-community==0.2.16
 
-# Data processing and analysis (Python 3.13 compatible versions)
-pandas==2.2.0
-numpy==1.26.4
+# Data processing - use pre-compiled wheels for Python 3.11
+pandas>=2.0.0,<2.3.0
+numpy>=1.24.0,<1.27.0
 plotly==5.17.0
 
 # Additional utilities
 pydantic==2.5.0
 python-dotenv==1.0.0
 aiofiles==23.2.1
-
-# Optional: For enhanced data processing (Python 3.13 compatible)
-scikit-learn==1.4.0
-scipy==1.12.0
 
 # Security and CORS
 python-jose[cryptography]==3.3.0
