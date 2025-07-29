@@ -2,17 +2,22 @@ services:
   - type: web
     name: ai-analytics-dashboard
     env: python
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    plan: free  # Using free tier
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
     envVars:
       - key: ENVIRONMENT
         value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: GROQ_API_KEY
-        sync: false  # Set manually in Render dashboard
+        sync: false  # This will be set manually in Render dashboard
       - key: LANGSMITH_API_KEY
-        sync: false  # Set manually in Render dashboard  
+        sync: false  # Optional - set manually if needed
       - key: LANGSMITH_PROJECT
-        value: Ad_my_brand_project
-      - key: HF_TOKEN
-        sync: false  # Set manually in Render dashboard
+        value: ai-analytics-dashboard
+    healthCheckPath: /health
+    domains:
+      - ai-analytics-dashboard.onrender.com  # You can customize this
+    autoDeploy: true
+    branch: main  # or your default branch name

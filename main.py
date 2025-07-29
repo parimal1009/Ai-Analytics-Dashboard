@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -38,10 +39,20 @@ app = FastAPI(
     redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None
 )
 
-# Add CORS middleware
+# Production-ready CORS configuration
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+if ENVIRONMENT == "production":
+    # Configure for your actual domain in production
+    allowed_origins = [
+        "https://your-domain.onrender.com",
+        "https://ai-analytics-dashboard.onrender.com"
+    ]
+else:
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +63,6 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
 LANGSMITH_PROJECT = os.getenv("LANGSMITH_PROJECT", "default")
 HF_TOKEN = os.getenv("HF_TOKEN")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Check for required environment variables
 if not GROQ_API_KEY:
@@ -72,6 +82,9 @@ try:
         logger.info("AI components initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize AI components: {str(e)}")
+
+# Create templates directory if it doesn't exist
+os.makedirs("templates", exist_ok=True)
 
 # Pydantic models
 class AnalyticsQuery(BaseModel):
@@ -341,25 +354,54 @@ async def generate_predictions(metric: str, historical_data: List[Dict]) -> Dict
 async def read_root():
     """Serve the main dashboard"""
     try:
-        # Try to read from templates directory first
-        html_path = os.path.join("templates", "index.html")
-        if os.path.exists(html_path):
-            with open(html_path, "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
+        # Define possible HTML file locations
+        html_paths = [
+            os.path.join("templates", "index.html"),
+            "index.html",
+            "paste.txt"
+        ]
         
-        # Fallback to current directory
-        if os.path.exists("index.html"):
-            with open("index.html", "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
+        # Try to find and serve the HTML file
+        for html_path in html_paths:
+            if os.path.exists(html_path):
+                with open(html_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    # If it starts with <!DOCTYPE html>, it's our HTML file
+                    if content.strip().startswith("<!DOCTYPE html>"):
+                        logger.info(f"Serving HTML from: {html_path}")
+                        return HTMLResponse(content=content)
         
         # If no HTML file found, return a basic response
-        return HTMLResponse(content="""
+        logger.warning("No HTML dashboard file found")
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
         <html>
-            <head><title>AI Analytics Dashboard</title></head>
+            <head>
+                <title>AI Analytics Dashboard</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: white; }}
+                    .container {{ max-width: 800px; margin: 0 auto; text-align: center; }}
+                    h1 {{ color: #667eea; }}
+                    .status {{ background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                    a {{ color: #667eea; text-decoration: none; }}
+                    a:hover {{ text-decoration: underline; }}
+                </style>
+            </head>
             <body>
-                <h1>AI Analytics Dashboard</h1>
-                <p>Dashboard is running! Please ensure index.html is in the templates/ directory.</p>
-                <p><a href="/docs">View API Documentation</a></p>
+                <div class="container">
+                    <h1>🚀 AI Analytics Dashboard</h1>
+                    <div class="status">
+                        <p>✅ Backend is running successfully!</p>
+                        <p>Environment: {ENVIRONMENT}</p>
+                        <p>AI Status: {'✅ Available' if llm else '⚠️ Limited (API key needed)'}</p>
+                    </div>
+                    <p>📊 <a href="/api/dashboard-data">View Dashboard Data</a></p>
+                    <p>📖 <a href="/docs">API Documentation</a></p>
+                    <p>❤️ <a href="/health">Health Check</a></p>
+                    <div class="status">
+                        <p><small>Please upload your dashboard HTML file to the templates/ directory.</small></p>
+                    </div>
+                </div>
             </body>
         </html>
         """)
@@ -374,7 +416,8 @@ async def get_dashboard_data():
         return {
             "status": "success",
             "data": dashboard_data,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "ai_available": llm is not None
         }
     except Exception as e:
         logger.error(f"Failed to get dashboard data: {str(e)}")
@@ -481,7 +524,8 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "ai_model": "llama3-70b-8192" if llm else "unavailable",
         "version": "1.0.0",
-        "environment": ENVIRONMENT
+        "environment": ENVIRONMENT,
+        "groq_api_configured": GROQ_API_KEY is not None
     }
 
 @app.get("/api/health")
@@ -516,15 +560,70 @@ async def update_metrics():
 async def startup_event():
     """Initialize application on startup"""
     logger.info("Starting AI Analytics Dashboard...")
+    
+    # Ensure HTML file is in the right place
+    if os.path.exists("paste.txt"):
+        try:
+            with open("paste.txt", "r", encoding="utf-8") as f:
+                content = f.read()
+                if content.strip().startswith("<!DOCTYPE html>"):
+                    os.makedirs("templates", exist_ok=True)
+                    with open("templates/index.html", "w", encoding="utf-8") as f2:
+                        f2.write(content)
+                    logger.info("HTML file copied to templates/index.html")
+        except Exception as e:
+            logger.error(f"Failed to copy HTML file: {str(e)}")
+    
     generate_sample_data()
+    
+    # Only start background tasks in development
     if ENVIRONMENT != "production":
         asyncio.create_task(update_metrics())
-    logger.info("AI Analytics Dashboard started successfully")
+    
+    logger.info(f"AI Analytics Dashboard started successfully in {ENVIRONMENT} mode")
+    if llm:
+        logger.info("AI features are available")
+    else:
+        logger.warning("AI features are limited - GROQ_API_KEY not configured")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up on application shutdown"""
     logger.info("Shutting down AI Analytics Dashboard...")
+
+# Error handlers
+@app.exception_handler(404)
+async def not_found_handler(request, exc):
+    return HTMLResponse(
+        content="""
+        <html>
+            <head><title>404 - Not Found</title></head>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #1a1a1a; color: white;">
+                <h1>404 - Page Not Found</h1>
+                <p>The requested resource was not found.</p>
+                <a href="/" style="color: #667eea;">← Back to Dashboard</a>
+            </body>
+        </html>
+        """,
+        status_code=404
+    )
+
+@app.exception_handler(500)
+async def internal_error_handler(request, exc):
+    logger.error(f"Internal server error: {str(exc)}")
+    return HTMLResponse(
+        content="""
+        <html>
+            <head><title>500 - Internal Server Error</title></head>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #1a1a1a; color: white;">
+                <h1>500 - Internal Server Error</h1>
+                <p>Something went wrong on our end. Please try again later.</p>
+                <a href="/" style="color: #667eea;">← Back to Dashboard</a>
+            </body>
+        </html>
+        """,
+        status_code=500
+    )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
@@ -533,5 +632,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=False  # Set to False for production
+        reload=ENVIRONMENT != "production"  # Only reload in development
     )
